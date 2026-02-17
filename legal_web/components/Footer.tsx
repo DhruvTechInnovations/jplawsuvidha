@@ -21,8 +21,8 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
             <ul className="space-y-3">
               <li><HashLink to="/#" className="text-gray-400 hover:text-white transition-colors">Home</HashLink></li>
-              <li><HashLink to="/#expertise" className="text-gray-400 hover:text-white transition-colors"
-                offset={-40}>Areas of Expertise</HashLink></li>
+              <li><Link href="/#expertise" className="text-gray-400 hover:text-white transition-colors"
+              >Areas of Expertise</Link></li>
               <li><HashLink to="/nri-services" className="text-gray-400 hover:text-white transition-colors">NRI Services</HashLink></li>
               <li><HashLink to="/#jplaw" className="text-gray-400 hover:text-white transition-colors"
                 offset={-40}>Why JP Law Suvidha</HashLink></li>
