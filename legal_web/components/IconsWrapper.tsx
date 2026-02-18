@@ -9,6 +9,13 @@ export default function LayoutVisibilityWrapper({ children }: { children: React.
   const hideSideIcons =
     pathname === "/personaldashboard/" ||
     pathname === "/personaldashboard/profile/";
+  const openWhatsAppPopup = () => {
+    window.open(
+      "https://wa.me/917842937373?text=Hello",
+      "whatsappWindow",
+      "width=500,height=700,menubar=no,toolbar=no,resizable=yes"
+    );
+  };
   return (
     <>
       {children}
@@ -84,15 +91,16 @@ export default function LayoutVisibilityWrapper({ children }: { children: React.
 
           {/* WhatsApp */}
           <div className="lg:block fixed bottom-3 right-10 transform -translate-y-1/2 flex flex-col  pl-0 z-50" onClick={() => {
-            (window as any).datalayer?.push({
+            (window as any).dataLayer?.push({
               event: 'whatsapp_click',
               button_name: 'whatsapp_click'
             })
           }}>
             <a href="https://wa.me/917842937373?text=Hello"
-              target="_blank"
+              target="_self"
               rel="noopener noreferrer"
               className="w-16 h-10 rounded-full bg-blue-200 flex items-center justify-center hover:bg-blue-400 transition-colors animate-whatsapp ">
+
               <span className="sr-only">WhatsApp</span>
               <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="16" cy="16" r="16" fill="#25D366" />
