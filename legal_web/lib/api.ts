@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { privateApi } from './privateapi';
-// const API_BASE_URL = 'http://localhost:3001/api';
-const API_BASE_URL = 'https://backend.com.jplawsuvidha.com/api';
+const API_BASE_URL = 'http://localhost:3001/api';
+// const API_BASE_URL = 'https://backend.com.jplawsuvidha.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -88,7 +88,6 @@ export const orderService = { // This is for payment-route
 export const profileService = {
   getProfile: async (signal?: AbortSignal) => {
     try {
-      // const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const res = await privateApi.get('/profile', { signal });
       return res.data;
     } catch (err) {
@@ -97,13 +96,24 @@ export const profileService = {
   },
   updateProfile: async (profileData: any, token?: string) => {
     try {
-      // const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const res = await privateApi.put('/profile', profileData);
       return res.data;
     } catch (err) {
       throw err;
     }
-  }
+  },
+  uploadProfilePhoto: async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      // Do NOT set Content-Type manually — axios auto-sets it with the
+      // correct multipart boundary when it detects a FormData body.
+      const res = await privateApi.post('/profile/upload-profile', formData);
+      return res.data; // { message, imageUrl }
+    } catch (err) {
+      throw err;
+    }
+  },
 };
 
 export const leadService = {

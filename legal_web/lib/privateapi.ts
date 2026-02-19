@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://backend.com.jplawsuvidha.com/api";
-// const API_BASE_URL = 'http://localhost:3001/api';
+// const API_BASE_URL = "https://backend.com.jplawsuvidha.com/api";
+const API_BASE_URL = 'http://localhost:3001/api';
 
 
 let accessToken: string | null = null;
@@ -30,6 +30,7 @@ privateApi.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config as any;
+        console.log('orginairequest', originalRequest)
 
         // Do NOT retry validate itself
         if (originalRequest?.url?.includes("/validate")) {

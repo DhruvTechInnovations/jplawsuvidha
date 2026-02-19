@@ -35,6 +35,8 @@ const Profile = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [password, setpassword] = useState(false);
   const [form, setForm] = useState({ current: '', newPass: '', confirm: '' });
@@ -51,9 +53,10 @@ const Profile = () => {
         }
       } catch (err) {
         if (!controller.signal.aborted) {
+          setLoading(true)
           console.error("Failed to fetch profile:", err);
-          const saved = localStorage.getItem('advocate_profile');
           if (saved) setProfile(JSON.parse(saved));
+
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -90,10 +93,25 @@ const Profile = () => {
     }
   };
 
-  const handleImageUpdate = (imageData) => {
-    const updatedProfile = { ...profile, photo: imageData };
-    setProfile(updatedProfile);
-    localStorage.setItem("advocate_profile", JSON.stringify(updatedProfile));
+  // Called by PhotoUpdateModal with (file: File, previewDataUrl: string)
+  const handleImageUpdate = async (file, previewDataUrl) => {
+    // Immediately show the local preview for instant feedback
+    setProfile(prev => ({ ...prev, photo: previewDataUrl }));
+    setUploadError(null);
+    setUploadLoading(true);
+    try {
+      const { imageUrl } = await profileService.uploadProfilePhoto(file);
+      // Replace preview with the permanent S3 URL
+      setProfile(prev => ({ ...prev, photo: imageUrl }));
+      localStorage.setItem("advocate_profile", JSON.stringify({ ...profile, photo: imageUrl }));
+    } catch (err) {
+      console.error("Profile photo upload failed:", err);
+      setUploadError("Photo upload failed. Please try again.");
+      // Roll back to previous photo
+      setProfile(prev => ({ ...prev, photo: profile.photo }));
+    } finally {
+      setUploadLoading(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -146,7 +164,7 @@ const Profile = () => {
                     className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400 cursor-pointer"
                   >
                     <img
-                      src="https://www.gravatar.com/avatar/?d=mp"
+                      src={profile.profile_image}
                       alt="User Avatar"
                       className="w-full h-full object-cover"
                     />
@@ -181,7 +199,7 @@ const Profile = () => {
                   className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400 cursor-pointer"
                 >
                   <img
-                    src="https://www.gravatar.com/avatar/?d=mp"
+                    src={profile.profile_image}
                     alt="User Avatar"
                     className="w-full h-full object-cover"
                   />
@@ -228,13 +246,19 @@ const Profile = () => {
             <div className="flex flex-col items-center mb-6 relative">
               <div className="relative group w-28 h-28 mb-4">
                 <img
-                  src={profile.photo}
+                  src={profile.profile_image}
                   alt="Advocate"
-                  className="w-full h-full rounded-full object-cover border-4 border-blue-200"
+                  className={`w-full h-full rounded-full object-cover border-4 border-blue-200 ${uploadLoading ? 'opacity-50' : ''}`}
                 />
+                {uploadLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderBottomColor: COLORS.gold }} />
+                  </div>
+                )}
                 <button
                   onClick={() => setShowModal(true)}
-                  className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md cursor-pointer"
+                  disabled={uploadLoading}
+                  className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow-md cursor-pointer disabled:opacity-50"
                   title="Edit photo"
                 >
                   <Pencil className="w-4 h-4 text-gray-700" />
@@ -247,6 +271,9 @@ const Profile = () => {
                   />
                 )}
               </div>
+              {uploadError && (
+                <p className="text-red-500 text-sm mt-1">{uploadError}</p>
+              )}
               <h2 className="text-2xl font-bold text-gray-800">{profile.name}</h2>
               <p className="text-gray-600">{profile.email}</p>
             </div>
