@@ -268,16 +268,9 @@ function LoginForm() {
                 </button>
               </div>
 
-              {/* <div className="flex items-center justify-between text-blue-500 curor-pointer">
-                <button
-                  type="button"
-                  onClick={() => setTestState(prev => prev + 1)}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded border border-gray-300 transition-colors"
-                >
-                  Test State: {testState}
-                </button>
+              <div className="flex items-center justify-end text-blue-500 curor-pointer">
                 <Link href='/forgot-password'>Forgot Password</Link>
-              </div> */}
+              </div>
 
               {/* Terms and Conditions */}
               <div className="flex items-start gap-3 p-4 bg-blue-50/50 border border-blue-100 rounded-xl transition-all hover:bg-blue-50 hover:border-blue-200">
