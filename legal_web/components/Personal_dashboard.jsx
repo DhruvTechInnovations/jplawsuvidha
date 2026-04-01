@@ -525,7 +525,7 @@ function PersonalDashboard() {
             className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400"
           >
             <img
-              src="https://www.gravatar.com/avatar/?d=mp"
+              src={profile?.profile_image}
               alt="User Avatar"
               className="w-full h-full object-cover"
             />

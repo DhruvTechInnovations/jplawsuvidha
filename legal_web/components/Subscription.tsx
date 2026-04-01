@@ -269,7 +269,7 @@ function SubscriptionPlans() {
                   </div>
                 )}
                 <div className=''>
-                  <CardHeader className={`bg-gradient-to-br ${plan.color} p-7 h-[250px]
+                  <CardHeader className={`bg-gradient-to-br ${plan.color} p-7 h-[300px]
                 `} style={{ clipPath: 'inset(0 round 0.75rem 0.75rem 0 0)' }}>
                     <div className="flex  items-center gap-3 mb-4">
                       <div className={`w-12 h-12 rounded-xl bg-white/70 flex items-center justify-center `}>

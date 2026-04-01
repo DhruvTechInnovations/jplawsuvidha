@@ -325,7 +325,7 @@ const Navbar = () => {
               onClick={() => navigate.push('/signup')}
               className="group flex items-center gap-2 text-white hover:text-gray-400 transform hover:scale-105 transition-all duration-200 cursor-pointer"
             >
-              <UserPlus className="w-4 h-4 text-emerald-700 group-hover:scale-110 transition-transform" /> Register
+              <UserPlus className="w-4 h-4 text-emerald-700 group-hover:scale-110 transition-transform" /> Subscribe
             </Button>
             {!hideLang && (
               <div className="relative rounded-lg">

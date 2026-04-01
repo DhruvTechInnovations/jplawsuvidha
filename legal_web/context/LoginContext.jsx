@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    // console.log('use context inside the provider')
+    console.log('use context inside the provider')
   }
   return context
 }
