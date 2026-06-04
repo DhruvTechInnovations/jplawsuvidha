@@ -218,6 +218,8 @@ const Navbar = () => {
         { label: 'Legal Consultation', to: '/services/legal-consultation' },
         { label: 'Legal Representation', to: '/services/legal-representation' },
         { label: 'Enterprise Legal', to: '/services/legal-enterprise' },
+        { label: 'Cyber Assistance', to: '/services/cyber-assistance' },
+        { label: 'Document Assistance', to: '/services/document-assistance' },
       ],
     },
     {

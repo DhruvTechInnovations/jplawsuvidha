@@ -167,7 +167,7 @@ export default function RootLayout({
             };
           `}
         </Script>
-
+        <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "96d73e85d19546f69c2d3210ad836aba"}'></script>
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5L8TP5BW"
           height="0" width="0" style={{ display: 'none', visibility: 'hidden' }}></iframe></noscript>
 

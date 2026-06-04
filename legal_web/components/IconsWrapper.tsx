@@ -95,7 +95,7 @@ export default function LayoutVisibilityWrapper({ children }: { children: React.
               <img src='./book_your.png' alt='free_consultation_img'></img>
             </div> */}
           </div>
-          <div className="lg:block fixed bottom-1 right-16 transform -translate-y-1/2 flex flex-col pl-0 z-50" onClick={() => {
+          <div className="lg:block fixed bottom-1 right-6 transform -translate-y-1/2 flex flex-col pl-0 z-50" onClick={() => {
             (window as any).dataLayer?.push({
               event: 'whatsapp_click',
               button_name: 'whatsapp_click'

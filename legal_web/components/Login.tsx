@@ -39,7 +39,6 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     if (!email || !password) {
       toast.error('Please fill in all required fields.');
       setIsSubmitting(false);
@@ -54,7 +53,7 @@ function LoginForm() {
     try {
       setError(null);
       const response = await loginUser(email, password); // Use the new loginUser function
-
+      console.log('ch1', response)
       const { status, message } = response;
       // console.log('refreshToken is ', rtoken);
       // console.log('response in login component', response)
@@ -309,15 +308,19 @@ function LoginForm() {
               <button
                 disabled={disabled}
                 type="submit"
-                onClick={() => (window as any).datalayer?.push({
-                  event: 'advocate_login',
-                  button_name: 'Sign In'
-                })}
+                onClick={async () => {
+                  (window as any).dataLayer?.push({
+                    event: "advocate_login",
+                    button_name: "Sign In",
+                  });
+
+                  await new Promise((resolve) => setTimeout(resolve, 10000));
+                }}
                 className={`w-full h-12 bg-black text-white font-medium transition-colors focus:ring-2 focus:ring-blue-700 focus:ring-offset-2 rounded-lg ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer  hover:bg-blue-700'}`}
               >
                 {isSubmitting ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="flex items-center justify-center gap-2 cursor-not-allowed">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin " />
                     Signing you in...
                   </div>
                 ) : (
