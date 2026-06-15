@@ -8,7 +8,7 @@ function formatActivityTime(createdAt) {
     // Backend UTC dates
     const createdUTC = new Date(createdAt);
     const nowUTC = new Date();
-
+    const message_time = createdUTC.toLocaleDateString("en-IN", { minute: '2-digit', month: 'short', year: 'numeric' })
     console.log("🕒 createdUTC (ISO):", createdUTC);
     console.log("🕒 nowUTC (ISO):", nowUTC);
 
@@ -39,7 +39,7 @@ function formatActivityTime(createdAt) {
     else if (diffMinutes < 60) result = `${diffMinutes} mins ago`;
     else if (diffHours < 24) result = `${diffHours} hours ago`;
     else
-        result = `${diffDays} ${diffDays === 1 ? 'day ago' : 'days ago'}`;
+        result = `${diffDays === 1 ? 'day ago' : message_time}`;
 
     console.log("✅ Final output:", result);
 

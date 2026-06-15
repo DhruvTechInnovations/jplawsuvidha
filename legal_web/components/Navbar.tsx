@@ -1,6 +1,6 @@
 "use client"
-import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, User, UserPlus, ArrowUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, Children } from 'react';
+import { Menu, X, User, UserPlus, ArrowUp, ArrowRight } from 'lucide-react';
 import Logo from './Logo';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { navbarConfig } from '@/lib/navbarconfig';
 type MenuItem = {
   label: string;
   href?: string;
-  children?: { label: string; to: string }[];
+  children?: { label: string; to: string, child?: any[] }[];
 };
 
 const MobileMenu = ({
@@ -220,6 +220,13 @@ const Navbar = () => {
         { label: 'Enterprise Legal', to: '/services/legal-enterprise' },
         { label: 'Cyber Assistance', to: '/services/cyber-assistance' },
         { label: 'Document Assistance', to: '/services/document-assistance' },
+        {
+          label: 'Reporting Assistance', to: '#',
+          child:
+            [
+              { label: "Child Labour", to: "/services/child-labour" },
+            ]
+        },
       ],
     },
     {
@@ -233,6 +240,8 @@ const Navbar = () => {
     },
     { label: 'NRI Services', href: 'nri-services' },
   ];
+
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -281,7 +290,7 @@ const Navbar = () => {
 
                 {/* Dropdown for desktop */}
                 {item.children && activeSection === item.label && (
-                  <div className="absolute top-full left-0 w-72 bg-white border border-gray-100 shadow-2xl rounded-xl overflow-hidden z-50 backdrop-blur-sm animate-in fade-in slide-in-from-top-3 duration-300">
+                  <div className="absolute top-full left-0 w-72 bg-white border border-gray-100 shadow-2xl rounded-xl z-50 backdrop-blur-sm animate-in fade-in slide-in-from-top-3 duration-300">
                     <div className="px-5 py-4 bg-gray-200 border-b border-gray-100">
                       <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                         {`Our ${item.label}`}
@@ -289,18 +298,47 @@ const Navbar = () => {
                     </div>
                     <div className="py-2">
                       {item.children.map((child) => (
-                        <Link
-                          key={child.to}
-                          href={child.to}
-                          className="group flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50 hover:text-gray-700 transition-all duration-300 border-l-4 border-transparent hover:border-gray-600"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-black transition-colors duration-300" />
-                            <span className="font-sm">{child.label}</span>
-                          </div>
-                        </Link>
+                        <div key={child.to} className="relative group/sub">
+
+                          <Link
+                            href={child.to}
+                            className="group flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-indigo-50 hover:text-gray-700 transition-all duration-300 border-l-4 border-transparent hover:border-gray-600"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-black transition-colors duration-300" />
+                              <span>{child.label}</span>
+                            </div>
+
+                            {child.child?.length ? (
+                              <span className="text-xs animate-pulse"><ArrowRight size={16}></ArrowRight></span>
+                            ) : null}
+                          </Link>
+
+                          {child.child?.length && (
+                            <div className="absolute left-full top-0 hidden group-hover/sub:block min-w-[220px] bg-white shadow-xl rounded-xl border ml-1">
+                              {child.child.map((sub) => {
+                                return (
+                                  <Link
+                                    key={sub.to}
+                                    href={sub.to}
+                                    className="block px-4 py-3 hover:bg-gray-50 rounded-xl border-l-4 border-gray-500"
+                                  >
+                                    <div className="flex items-center gap-3">
+
+                                      <div className="w-2 h-2 rounded-full bg-gray-300 group-hover:bg-black transition-colors duration-300" />
+
+                                      {sub.label}
+                                    </div>
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
                       ))}
+
                     </div>
+
                   </div>
                 )}
               </div>

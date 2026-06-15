@@ -16,8 +16,13 @@ export default function ProtectedRoute({ children }) {
     }
   }, [loading, accessToken, router]);
 
-  if (loading) return <div>Loading...</div>;
-
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   if (!accessToken) return null; // prevent flicker before redirect
 
   return <>{children}</>;

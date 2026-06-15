@@ -119,7 +119,7 @@ export default function RootLayout({
         </ErrorBoundary>
 
         {/* Tawk.to widget */}
-        <Script
+        {/* <Script
           id="tawkto"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
@@ -140,7 +140,7 @@ export default function RootLayout({
               }, 10000);
             `,
           }}
-        />
+        /> */}
 
         <Script
           id="tawk-datalayer-hook"

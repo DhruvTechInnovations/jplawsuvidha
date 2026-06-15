@@ -3,7 +3,7 @@ import { Menu, CircleUserRound, Inbox, Users, Settings, LogOut, FileText, MapPin
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/LoginContext'
 import CustomCalendar from '@/components/Calendar'
-import { leadService, authService, profileService } from '@/lib/api'
+import { leadService, authService, profileService, } from '@/lib/api'
 import DashboardBanner from '@/components/DashboardBanner'
 import { X } from 'lucide-react';
 import formatActivityTime from '@/lib/TimeFormat';
@@ -498,7 +498,7 @@ function PersonalDashboard() {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <option value="">Status</option>
+                  <option value="">All Status</option>
                   {statusOptions.map((status, idx) => (
                     <option key={idx} value={status}>{status}</option>
                   ))}
@@ -639,6 +639,18 @@ function PersonalDashboard() {
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                             {lead.status}
                           </span>
+                          {/* <select
+                            value={lead.status || ''}
+                            onChange={(e) => {
+                              leadService.addActivity(lead.id, e.target.value);
+                            }}
+                            className="px-2 py-1 text-xs font-medium border rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="New">New</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Declined">Declined</option>
+                          </select> */}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center bg-blue-50/50">
                           <button

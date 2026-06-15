@@ -20,7 +20,7 @@ export default function I18nProvider({ children }: { children: React.ReactNode }
 
   return (
     <I18nextProvider i18n={i18n}>
-      <div className={ready ? 'opacity-100' : 'opacity-0'}>
+      <div className={ready ? 'opacity-100' : 'opacity-100'}>
         {children}
       </div>
     </I18nextProvider>
