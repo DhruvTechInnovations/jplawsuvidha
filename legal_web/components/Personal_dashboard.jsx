@@ -9,6 +9,10 @@ import { X } from 'lucide-react';
 import formatActivityTime from '@/lib/TimeFormat';
 import { PhoneClickTracker } from '@/lib/PhoneClickTracker';
 
+import { Button } from './ui/button';
+import PhotoModal from '@/components/PhotoModal';
+import CustomerTable from '@/components/CustomerTable';
+
 const ActivityItem = ({ act }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const showButton = act.activity_text && act.activity_text.length > 50;
@@ -39,7 +43,7 @@ function PersonalDashboard() {
   const [leads, setLeads] = useState([]);
   const [locationFilter, setLocationFilter] = useState('');
   const [courtFilter, setCourtFilter] = useState('');
-  const [selectedLead, setSelectedLead] = useState(null);
+
   const [profile, setProfile] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -59,11 +63,55 @@ function PersonalDashboard() {
   const { id: userid, name: username, accessToken } = useAuth()
   const [phone, setPhone] = useState({})
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [clientsLoading, setClientsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  const [isAddingActivity, setIsAddingActivity] = useState(false);
-  const [newActivityText, setNewActivityText] = useState('');
-  const [activities, setActivities] = useState([]);
-  const [isActivitiesLoading, setIsActivitiesLoading] = useState(false);
+
+
+  const [advocates, setAdvocates] = useState([]);
+  const [advocatesLoading, setAdvocatesLoading] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    const fetchAdvocates = async () => {
+      setAdvocatesLoading(true);
+      try {
+        const data = await leadService.getAdvocates();
+        const list = Array.isArray(data) ? data : (data.advocates || data.data || []);
+        setAdvocates(list);
+      } catch (err) {
+        console.error("Failed to fetch advocates in dashboard:", err);
+      } finally {
+        setAdvocatesLoading(false);
+      }
+    };
+    fetchAdvocates();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchClients = async () => {
+      setClientsLoading(true);
+      try {
+        const data = await leadService.getClients(controller.signal);
+        const list = data?.clients || data?.data || (Array.isArray(data) ? data : []);
+        setClients(list);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to fetch clients:', err);
+          setClients([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setClientsLoading(false);
+        }
+      }
+    };
+    fetchClients();
+    return () => controller.abort();
+  }, []);
+
   //   console.log('user id is',userid)
   // console.log('login from context is ',login)
   const handleChange = (e) => {
@@ -125,12 +173,15 @@ function PersonalDashboard() {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setProfileLoading(true);
       try {
         const data = await profileService.getProfile();
         console.log('profile data', data)
         setProfile(data);
       } catch (err) {
         console.error("Failed to fetch profile in dashboard:", err);
+      } finally {
+        setProfileLoading(false);
       }
     };
     fetchProfile();
@@ -179,28 +230,6 @@ function PersonalDashboard() {
     };
   }, [visiblePhone, response]);
 
-  useEffect(() => {
-    if (selectedLead) {
-      const fetchActivities = async () => {
-        setIsActivitiesLoading(true);
-        try {
-          const data = await leadService.getActivities(selectedLead.id);
-          console.log('activiteis fetched', data.activities)
-          setActivities(data.activities || []);
-        } catch (err) {
-          console.error("Failed to fetch activities:", err);
-        } finally {
-          setIsActivitiesLoading(false);
-        }
-      };
-      fetchActivities();
-    } else {
-      setActivities([]);
-      setIsActivitiesLoading(false);
-      setIsAddingActivity(false);
-      setNewActivityText('');
-    }
-  }, [selectedLead]);
 
   const locationOptions = useMemo(() => {
     const locations = leads.map(lead => lead.location);
@@ -376,39 +405,125 @@ function PersonalDashboard() {
   const handlelogout = () => {
     logoutUser();
   }
+  // const advocates = [
+  //   {
+  //     id: 1,
+  //     name: "Ravi Teja",
+  //     enrollmentNumber: "AP/1234/2018",
+  //     specialization: "Civil Law",
+  //     areaOfPractice: "Property Disputes, Contracts",
+  //     image: "https://randomuser.me/api/portraits/men/1.jpg",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Priya Sharma",
+  //     enrollmentNumber: "TS/5678/2019",
+  //     specialization: "Criminal Law",
+  //     areaOfPractice: "Bail Matters, Criminal Defense",
+  //     image: "https://randomuser.me/api/portraits/women/2.jpg",
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Arjun Reddy",
+  //     enrollmentNumber: "AP/9012/2017",
+  //     specialization: "Corporate Law",
+  //     areaOfPractice: "Mergers, Compliance",
+  //     image: "https://randomuser.me/api/portraits/men/3.jpg",
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "Sneha Patel",
+  //     enrollmentNumber: "TS/3456/2020",
+  //     specialization: "Family Law",
+  //     areaOfPractice: "Divorce, Child Custody",
+  //     image: "https://randomuser.me/api/portraits/women/4.jpg",
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "Karthik Varma",
+  //     enrollmentNumber: "AP/7890/2016",
+  //     specialization: "Labour Law",
+  //     areaOfPractice: "Employment Disputes",
+  //     image: "https://randomuser.me/api/portraits/men/5.jpg",
+  //   },
+  //   {
+  //     id: 6,
+  //     name: "Ananya Gupta",
+  //     enrollmentNumber: "TS/1122/2021",
+  //     specialization: "Intellectual Property",
+  //     areaOfPractice: "Trademarks, Copyrights",
+  //     image: "https://randomuser.me/api/portraits/women/6.jpg",
+  //   },
+  // ];
 
+  const isPageLoading = loading || profileLoading || advocatesLoading || clientsLoading;
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          {/* Animated spinner */}
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-blue-100"></div>
+            <div className="w-16 h-16 rounded-full border-4 border-transparent border-t-blue-600 animate-spin absolute top-0 left-0"></div>
+          </div>
+          {/* Loading text */}
+          <div className="text-center">
+            <p className="text-lg font-semibold text-gray-700">Loading Dashboard</p>
+            <p className="text-sm text-gray-400 mt-1">Fetching your data, please wait...</p>
+          </div>
+          {/* Skeleton preview cards */}
+          <div className="w-[480px] max-w-[90vw] space-y-3 mt-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                  </div>
+                  <div className="w-16 h-6 bg-gray-200 rounded-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex bg-gray-50 h-screen">
-      {/* Sidebar */}
-      <div className={`flex flex-col transition-all duration-200 ease-in-out ${sidebarOpen ? 'w-64' : 'w-16'} bg-white border-r min-h-screen shadow-md fixed z-20  `}>
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className={`text-lg font-semibold ${sidebarOpen ? 'block' : 'hidden'}`}>Dashboard</h2>
-          <button onClick={() => setSidebarOpen(prev => !prev)} className="p-2 rounded hover:bg-gray-200">
-            <Menu size={20} />
-          </button>
-        </div>
-        <nav className="flex-1 px-2 py-4">
-          <ul className="space-y-2">
-            {/* Sidebar Menu Items */}
-            {[
-              { icon: <Inbox size={20} />, label: 'All Leads' },
-              { icon: <Users size={20} />, label: 'My Clients' },
-              { icon: <FileText size={20} />, label: 'Documents' },
-            ].map(({ icon, label }, idx) => (
-              <li key={idx} className="relative group flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer">
-                {icon}
-                {sidebarOpen && <span>{label}</span>}
-                {!sidebarOpen && (
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ">
-                    {label}
-                  </span>
-                )}
-              </li>
-            ))}
+    <div className='flex flex-col'>
+      <div className="flex">
+        {/* Sidebar */}
+        <div className={`flex flex-col transition-all duration-200 ease-in-out ${sidebarOpen ? 'w-64' : 'w-16'} bg-white border-r min-h-screen shadow-md fixed z-20 `}>
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <h2 className={`text-lg font-semibold ${sidebarOpen ? 'block' : 'hidden'}`}>Dashboard</h2>
+            <button onClick={() => setSidebarOpen(prev => !prev)} className="p-2 rounded hover:bg-gray-200">
+              <Menu size={20} />
+            </button>
+          </div>
+          <nav className="flex-1 px-2 py-4">
+            <ul className="space-y-2">
+              {/* Sidebar Menu Items */}
+              {[
+                { icon: <Inbox size={20} />, label: 'All Leads' },
+                { icon: <Users size={20} />, label: 'My Clients' },
+                { icon: <FileText size={20} />, label: 'Documents' },
+              ].map(({ icon, label }, idx) => (
+                <li key={idx} className="relative group flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer">
+                  {icon}
+                  {sidebarOpen && <span>{label}</span>}
+                  {!sidebarOpen && (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ">
+                      {label}
+                    </span>
+                  )}
+                </li>
+              ))}
 
-            {/* Location Filter */}
-            {/* <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
+              {/* Location Filter */}
+              {/* <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
               <div className="flex items-center gap-2">
                 <MapPin size={20} />
                 {sidebarOpen && <span className="text-sm font-medium">Region</span>}
@@ -432,214 +547,227 @@ function PersonalDashboard() {
               )}
             </li> */}
 
-            {/* Court Filter */}
-            <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Landmark size={20} className="text-gray-600" />
-                {sidebarOpen && <span className="text-sm font-medium">Jurisdiction</span>}
-                {!sidebarOpen && (
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    Jurisdiction
-                  </span>
-                )}
-              </div>
-              {sidebarOpen && (
-                <select
-                  className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
-                  value={courtFilter}
-                  onChange={(e) => setCourtFilter(e.target.value)}
-                >
-                  <option value="">All Courts</option>
-                  {courtOptions.map((court, idx) => (
-                    <option key={idx} value={court}>{court}</option>
-                  ))}
-                </select>
-              )}
-            </li>
-
-            {/* casetypefiler */}
-            <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
-              <div className="flex items-center gap-2">
-                {/* <Gavel size={20} /> */}
-                <Tag size={20} className="text-gray-600" />
-                {sidebarOpen && <span className="text-sm font-medium">Case Type</span>}
-                {!sidebarOpen && (
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Case Type
-                  </span>
-                )}
-              </div>
-              {sidebarOpen && (
-                <select
-                  className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
-                  value={casetype}
-                  onChange={(e) => setCaseType(e.target.value)}
-                >
-                  <option value="">All Cases</option>
-                  {caseOptions.map((casetype, idx) => (
-                    <option key={idx} value={casetype}>{casetype}</option>
-                  ))}
-                </select>
-              )}
-            </li>
-            <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Hourglass size={18} className="text-gray-600" />
-                {sidebarOpen && <span className="text-sm font-medium">Status</span>}
-                {!sidebarOpen && (
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Status
-                  </span>
-                )}
-              </div>
-              {sidebarOpen && (
-                <select
-                  className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All Status</option>
-                  {statusOptions.map((status, idx) => (
-                    <option key={idx} value={status}>{status}</option>
-                  ))}
-                </select>
-              )}
-            </li>
-          </ul>
-
-          <CustomCalendar value={sidebarOpen} />
-          {/* <CalendarApp user={userid}/> */}
-
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div
-        className={`p-6 relative transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'
-          } w-full`}
-      >
-        {/* Top Right Menu */}
-        <div className="absolute top-4 right-6 z-20">
-          <button
-            onClick={() => setMenuOpen(prev => !prev)}
-            className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400"
-          >
-            <img
-              src={profile?.profile_image}
-              alt="User Avatar"
-              className="w-full h-full object-cover"
-            />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white shadow-xl rounded-xl border overflow-hidden">
-              <div className="p-4 border-b">
-                <p className="font-semibold text-gray-800">{profile?.name || username || 'Advocate'}</p>
-                <p className="text-sm text-gray-500">Advocate</p>
-              </div>
-              <ul className="py-2 text-sm text-gray-700">
-                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  <button className="w-full text-left text-gray-700 cursor-pointer hover:text-blue-600"
-
-                    onClick={handleProfile}
+              {/* Court Filter */}
+              <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Landmark size={20} className="text-gray-600" />
+                  {sidebarOpen && <span className="text-sm font-medium">Jurisdiction</span>}
+                  {!sidebarOpen && (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Jurisdiction
+                    </span>
+                  )}
+                </div>
+                {sidebarOpen && (
+                  <select
+                    className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
+                    value={courtFilter}
+                    onChange={(e) => setCourtFilter(e.target.value)}
                   >
-                    Profile
-                  </button>
-                </li>
-                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  <button className="w-full text-left text-gray-700 cursor-pointer hover:text-blue-600"
-                    onClick={handlechangePassword}>
-                    Change Password
-                  </button>
-                </li>
-                <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  <button className="w-full text-left text-gray-700 cursor-pointer hover:text-red-600"
-                    onClick={handlelogout}
+                    <option value="">All Courts</option>
+                    {courtOptions.map((court, idx) => (
+                      <option key={idx} value={court}>{court}</option>
+                    ))}
+                  </select>
+                )}
+              </li>
+
+              {/* casetypefiler */}
+              <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  {/* <Gavel size={20} /> */}
+                  <Tag size={20} className="text-gray-600" />
+                  {sidebarOpen && <span className="text-sm font-medium">Case Type</span>}
+                  {!sidebarOpen && (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Case Type
+                    </span>
+                  )}
+                </div>
+                {sidebarOpen && (
+                  <select
+                    className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
+                    value={casetype}
+                    onChange={(e) => setCaseType(e.target.value)}
                   >
-                    Logout
-                  </button>
-                </li>
-              </ul>
-            </div>
-          )}
+                    <option value="">All Cases</option>
+                    {caseOptions.map((casetype, idx) => (
+                      <option key={idx} value={casetype}>{casetype}</option>
+                    ))}
+                  </select>
+                )}
+              </li>
+              <li className="relative group flex flex-col gap-1 p-2 rounded hover:bg-gray-100 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Hourglass size={18} className="text-gray-600" />
+                  {sidebarOpen && <span className="text-sm font-medium">Status</span>}
+                  {!sidebarOpen && (
+                    <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-gray-700 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Status
+                    </span>
+                  )}
+                </div>
+                {sidebarOpen && (
+                  <select
+                    className="w-full mt-1 border border-gray-300 px-3 py-2 rounded text-sm bg-white"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Status</option>
+                    {statusOptions.map((status, idx) => (
+                      <option key={idx} value={status}>{status}</option>
+                    ))}
+                  </select>
+                )}
+              </li>
+            </ul>
+
+            <CustomCalendar value={sidebarOpen} />
+            {/* <CalendarApp user={userid}/> */}
+
+          </nav>
         </div>
 
-        <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Personal Dashboard</h1>
+        {/* Main Content */}
+        <div
+          className={`p-6 relative transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'
+            } w-full`}
+        >
+          {/* Top Right Menu */}
+          <div className="absolute top-4 right-6 z-20">
+            <button
+              onClick={() => setMenuOpen(prev => !prev)}
+              className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 hover:ring-2 hover:ring-blue-400"
+            >
+              <img
+                src={profile?.profile_image}
+                alt="User Avatar"
+                className="w-full h-full object-cover"
+              />
+            </button>
 
-
-        <DashboardBanner />
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden w-full">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="ml-4 text-gray-500 font-medium">Loading leads...</p>
-            </div>
-          ) : (
-            <>
-              {fetchError && (
-                <div className="bg-orange-50 text-orange-700 p-4 m-4 rounded-lg text-center border border-orange-200">
-                  {fetchError}
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white shadow-xl rounded-xl border overflow-hidden">
+                <div className="p-4 border-b">
+                  <p className="font-semibold text-gray-800">{profile?.name || username || 'Advocate'}</p>
+                  <p className="text-sm text-gray-500">Advocate</p>
                 </div>
-              )}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold tracking-wider border-b border-gray-100">
-                    <tr>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap">Name</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Phone</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Connected</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Case Type</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Status</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Details</th>
-                      <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Assigned To</th>
-                      <th
-                        className="px-6 py-4 font-medium whitespace-nowrap cursor-pointer select-none text-right hover:text-blue-600 transition-colors"
-                        onClick={() => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+                <ul className="py-2 text-sm text-gray-700">
+                  <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    <button className="w-full text-left text-gray-700 cursor-pointer hover:text-blue-600"
+
+                      onClick={handleProfile}
+                    >
+                      Profile
+                    </button>
+                  </li>
+                  {advocates && advocates.length > 0 && (
+                    <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-t border-gray-100">
+                      <button
+                        className="w-full text-left text-gray-700 cursor-pointer hover:text-blue-600 flex items-center gap-2"
+                        onClick={() => {
+                          setIsPhotoModalOpen(true);
+                          setMenuOpen(false);
+                        }}
                       >
-                        <div className="flex items-center justify-end gap-1">
-                          Assigned Date
-                          <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {paginatedLeads.map((lead) => (
-                      <tr key={lead.id} className="bg-white hover:bg-blue-50/30 transition-colors duration-150">
-                        <td className="px-6 py-4 whitespace-nowrap text-left">
-                          <span className="font-semibold text-gray-900">{lead.name}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => {
-                              handlePhoneClick(lead);
-                              if (lead?.phone) {
-                                PhoneClickTracker(lead.phone);
-                              }
-                            }}
-                            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                          >
-                            {maskPhone(lead.phone)}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${lead.connected
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                              }`}
-                          >
-                            {lead.connected ? 'Yes' : 'No'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-left">
-                          <span className="text-gray-600">{lead.casetype}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            {lead.status}
-                          </span>
-                          {/* <select
+                        <Users size={16} />
+                        Advocates Showcase
+                      </button>
+                    </li>
+                  )}
+                  <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    <button className="w-full text-left text-gray-700 cursor-pointer hover:text-blue-600"
+                      onClick={handlechangePassword}>
+                      Change Password
+                    </button>
+                  </li>
+                  <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                    <button className="w-full text-left text-gray-700 cursor-pointer hover:text-red-600"
+                      onClick={handlelogout}
+                    >
+                      Logout
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">Personal Dashboard</h1>
+
+
+          <DashboardBanner />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden w-full">
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="ml-4 text-gray-500 font-medium">Loading leads...</p>
+              </div>
+            ) : (
+              <>
+                {fetchError && (
+                  <div className="bg-orange-50 text-orange-700 p-4 m-4 rounded-lg text-center border border-orange-200">
+                    {fetchError}
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs uppercase bg-gray-50/50 text-gray-500 font-semibold tracking-wider border-b border-gray-100">
+                      <tr>
+                        <th className="px-6 py-4 font-medium whitespace-nowrap">Name</th>
+                        <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Phone</th>
+                        <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Connected</th>
+                        <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Case Type</th>
+                        <th className="px-6 py-4 font-medium whitespace-nowrap text-center">Status</th>
+
+                        <th
+                          className="px-6 py-4 font-medium whitespace-nowrap cursor-pointer select-none text-right hover:text-blue-600 transition-colors"
+                          onClick={() => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Created Date
+                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {paginatedLeads.map((lead) => (
+                        <tr key={lead.id} className="bg-white hover:bg-blue-50/30 transition-colors duration-150">
+                          <td className="px-6 py-4 whitespace-nowrap text-left">
+                            <span className="font-semibold text-gray-900">{lead.name}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => {
+                                handlePhoneClick(lead);
+                                if (lead?.phone) {
+                                  PhoneClickTracker(lead.phone);
+                                }
+                              }}
+                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                            >
+                              {maskPhone(lead.phone)}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${lead.connected
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : 'bg-red-50 text-red-700 border-red-200'
+                                }`}
+                            >
+                              {lead.connected ? 'Yes' : 'No'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-left">
+                            <span className="text-gray-600">{lead.casetype}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                              {lead.status}
+                            </span>
+                            {/* <select
                             value={lead.status || ''}
                             onChange={(e) => {
                               leadService.addActivity(lead.id, e.target.value);
@@ -651,343 +779,212 @@ function PersonalDashboard() {
                             <option value="Completed">Completed</option>
                             <option value="Declined">Declined</option>
                           </select> */}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center bg-blue-50/50">
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors p-2 rounded-full hover:bg-blue-100/50"
-                          >
-                            <FileText size={18} />
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500 text-xs">
-                          {lead.assigned ? (
-                            <span className="bg-gray-100 px-2 py-1 rounded">{lead.assigned}</span>
-                          ) : (
-                            <span className="text-gray-900">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500 tabular-nums">
-                          {new Date(lead.created_at).toLocaleDateString('en-IN', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-end">
+                          </td>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  >
-                    Next
-                  </button>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500 tabular-nums">
+                            {new Date(lead.created_at).toLocaleDateString('en-IN', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            </>
-          )}
+                <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-end">
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {clients.length > 0 && <CustomerTable clients={clients} />}
+
+
         </div>
-
-        {selectedLead && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300">
-            <div className="w-[700px] h-[80vh] overflow-hidden bg-white rounded-2xl shadow-2xl flex flex-col transform transition-all duration-300 scale-100">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <FileText size={20} />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900">Case Details</h2>
-                </div>
-                <button
-                  onClick={() => setSelectedLead(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Main Content Wrapper - Fixed Layout with specific internal scrolling */}
-              <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50 overflow-hidden">
-
-                {/* Case Summary Section (Fixed at top) */}
-                <div className="flex-none p-6 pb-2">
-                  <div className="bg-white p-5 rounded-xl border border-gray-200/60 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      Case Summary
-                    </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap max-h-32 overflow-y-auto custom-scrollbar">
-                      {selectedLead.description || 'No description provided for this case.'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Activity Section (Takes remaining space) */}
-                <div className="flex-1 flex flex-col min-h-0 px-6 pb-6">
-                  <div className="flex items-center justify-between mb-4 flex-none">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      Activity Log
-
-                    </h3>
-
-                    {!isAddingActivity && (
-                      <button
-                        onClick={() => setIsAddingActivity(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all shadow-sm active:scale-95"
-                      >
-                        <span>+ Add Note</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {isAddingActivity && (
-                    <div className="flex-none mb-4 bg-white p-4 rounded-xl border border-gray-200 shadow-md animate-in fade-in slide-in-from-top-2 duration-200">
-                      <textarea
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-                        rows={3}
-                        placeholder="Type your activity note here..."
-                        value={newActivityText}
-                        onChange={(e) => setNewActivityText(e.target.value)}
-                        autoFocus
-                      />
-                      <div className="flex justify-end gap-3 mt-3">
-                        <button
-                          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                          onClick={() => {
-                            setIsAddingActivity(false);
-                            setNewActivityText('');
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow transition-all active:scale-95"
-                          onClick={async () => {
-                            if (!newActivityText.trim()) return;
-                            try {
-                              await leadService.addActivity(selectedLead.id, newActivityText);
-                              setNewActivityText('');
-                              setIsAddingActivity(false);
-                              const data = await leadService.getActivities(selectedLead.id);
-                              setActivities(data.activities || []);
-                            } catch (e) {
-                              console.error(e);
-                              alert("Failed to add activity");
-                            }
-                          }}
-                        >
-                          Save Note
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Scrollable Activity List */}
-                  <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar relative">
-                    {isActivitiesLoading ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary border-blue-600"></div>
-                      </div>
-                    ) : (
-                      <>
-                        {activities.length > 0 ? (
-                          activities.slice(0, 5).map((act, idx) => (
-                            <ActivityItem key={idx} act={act} />
-                          ))
-                        ) : (
-                          <div className="text-center py-8 bg-white rounded-xl border border-dashed border-gray-200">
-                            <p className="text-sm text-gray-400">No activity recorded yet.</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+        {visiblePhone && (
+          <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow-lg w-[300px] text-center">
+              <h3 className="text-lg font-semibold mb-2 text-gray-800">Phone Number</h3>
+              <p className="text-xl text-gray-700">{visiblePhone.phone}</p>
+              <div className='flex flex-col'>
+                <span>Is Client Connected</span>
+                <div className='flex items-center justify-center gap-2'>
+                  <button
+                    onClick={() => handleYes(visiblePhone, true)}
+                    className="mt-4 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded cursor-pointer"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => handleNo(visiblePhone, false)}
+                    className="mt-4 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded cursor-pointer"
+                  >
+                    No
+                  </button>
+                  {/* <p className="mt-2 text-sm text-gray-500">
+                  Yes: {clickCount[visiblePhone.phone]?.yes || 0} | No: {clickCount[visiblePhone.phone]?.no || 0}
+                </p> */}
                 </div>
               </div>
             </div>
           </div>
         )}
-      </div>
-      {visiblePhone && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[300px] text-center">
-            <h3 className="text-lg font-semibold mb-2 text-gray-800">Phone Number</h3>
-            <p className="text-xl text-gray-700">{visiblePhone.phone}</p>
-            <div className='flex flex-col'>
-              <span>Is Client Connected</span>
-              <div className='flex items-center justify-center gap-2'>
+
+
+        {/* ADVOCATE NO HANDLING MODAL */}
+        {showmodal && (
+          <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white w-[400px] p-6 rounded shadow-xl text-center relative">
+              <h3 className="text-lg font-semibold text-red-700 mb-4">Why is the client not connected?</h3>
+
+              <form className="flex flex-col items-start space-y-2">
+                {['Wrong Number', 'No Response', 'Not Interested', 'Other'].map((reason, idx) => (
+                  <label key={idx} className="flex items-center gap-2 text-gray-700 ">
+                    <input
+                      type="radio"
+                      name="disconnectReason"
+                      value={reason}
+                      className="accent-red-500 cursor-pointer"
+                      onChange={(e) => {
+                        setDisconnectInfo(prev => ({ ...prev, reason }))
+                        // console.log('Selected reason:', e.target.value)
+                        // console.log('selected', disconnectInfo)
+
+                      }}
+                    />
+                    {reason}
+                    {/* {console.log('selected 2',disconnectInfo)} */}
+                  </label>
+                ))}
+                <p>
+
+                  No: {clickCount[disconnectInfo.phone]?.no || 0}
+                </p>
+                {disconnectInfo.reason === 'Other' && (
+                  <textarea
+                    placeholder="Please specify..."
+                    className="border px-2 py-1 rounded w-full mt-2 text-sm"
+                    value={disconnectInfo.notes}
+                    onChange={(e) =>
+                      setDisconnectInfo((prev) => ({ ...prev, notes: e.target.value }))
+                    }
+                  />
+                )}
+
+              </form>
+
+              <div className="mt-6 flex justify-end gap-2">
                 <button
-                  onClick={() => handleYes(visiblePhone, true)}
-                  className="mt-4 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded cursor-pointer"
+                  onClick={() => {
+                    if (!disconnectInfo.reason) {
+                      alert("Please select a reason before submitting.");
+                      return;
+                    }
+                    updateLeadStatus(disconnectInfo.leadId, false, {
+                      reason: disconnectInfo.reason,
+                      notes: disconnectInfo.notes,
+                      status: 'Declined'
+                    });
+                    setShowModal(false);
+                    // console.log('Disconnect Info', disconnectInfo)
+                    localStorage.setItem('DisconnectInfo', JSON.stringify(disconnectInfo))
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
                 >
-                  Yes
+                  Submit
                 </button>
-                <button
-                  onClick={() => handleNo(visiblePhone, false)}
-                  className="mt-4 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded cursor-pointer"
-                >
-                  No
-                </button>
-                {/* <p className="mt-2 text-sm text-gray-500">
-                  Yes: {clickCount[visiblePhone.phone]?.yes || 0} | No: {clickCount[visiblePhone.phone]?.no || 0}
-                </p> */}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
 
-      {/* ADVOCATE NO HANDLING MODAL */}
-      {showmodal && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white w-[400px] p-6 rounded shadow-xl text-center relative">
-            <h3 className="text-lg font-semibold text-red-700 mb-4">Why is the client not connected?</h3>
+        {/* ADVOCATE YES HANDLING MODAL */}
+        {showYesModal && (
+          <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px]  bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white w-[400px] p-6 rounded shadow-xl text-center relative">
+              <h3 className="text-lg font-semibold text-green-700 mb-4">
+                Connection Details
+              </h3>
 
-            <form className="flex flex-col items-start space-y-2">
-              {['Wrong Number', 'No Response', 'Not Interested', 'Other'].map((reason, idx) => (
-                <label key={idx} className="flex items-center gap-2 text-gray-700 ">
-                  <input
-                    type="radio"
-                    name="disconnectReason"
-                    value={reason}
-                    className="accent-red-500 cursor-pointer"
-                    onChange={(e) => {
-                      setDisconnectInfo(prev => ({ ...prev, reason }))
-                      // console.log('Selected reason:', e.target.value)
-                      // console.log('selected', disconnectInfo)
-
-                    }}
-                  />
-                  {reason}
-                  {/* {console.log('selected 2',disconnectInfo)} */}
-                </label>
-              ))}
-              <p>
-
-                No: {clickCount[disconnectInfo.phone]?.no || 0}
-              </p>
-              {disconnectInfo.reason === 'Other' && (
+              <form className="flex flex-col items-start space-y-2">
+                {['Required Follow-Up', 'Converted to Business', 'Not Interested'].map((status, idx) => (
+                  <label key={idx} className="flex items-center gap-2 text-gray-700">
+                    <input
+                      type="radio"
+                      name="connectStatus"
+                      value={status}
+                      className="accent-green-500 cursor-pointer"
+                      onChange={(e) =>
+                        setConnectInfo(prev => ({ ...prev, status: e.target.value }))
+                      }
+                    />
+                    {status}
+                  </label>
+                ))}
+                <p className="mt-2 text-sm text-gray-500">
+                  Yes: {clickCount[connectInfo.phone]?.yes || 0}
+                </p>
                 <textarea
-                  placeholder="Please specify..."
+                  placeholder="Additional notes (optional)..."
                   className="border px-2 py-1 rounded w-full mt-2 text-sm"
-                  value={disconnectInfo.notes}
+                  value={connectInfo.notes}
                   onChange={(e) =>
-                    setDisconnectInfo((prev) => ({ ...prev, notes: e.target.value }))
+                    setConnectInfo(prev => ({ ...prev, notes: e.target.value }))
                   }
                 />
-              )}
+              </form>
 
-            </form>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  if (!disconnectInfo.reason) {
-                    alert("Please select a reason before submitting.");
-                    return;
-                  }
-                  updateLeadStatus(disconnectInfo.leadId, false, {
-                    reason: disconnectInfo.reason,
-                    notes: disconnectInfo.notes,
-                    status: 'Declined'
-                  });
-                  setShowModal(false);
-                  // console.log('Disconnect Info', disconnectInfo)
-                  localStorage.setItem('DisconnectInfo', JSON.stringify(disconnectInfo))
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* ADVOCATE YES HANDLING MODAL */}
-      {showYesModal && (
-        <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px]  bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white w-[400px] p-6 rounded shadow-xl text-center relative">
-            <h3 className="text-lg font-semibold text-green-700 mb-4">
-              Connection Details
-            </h3>
-
-            <form className="flex flex-col items-start space-y-2">
-              {['Required Follow-Up', 'Converted to Business', 'Not Interested'].map((status, idx) => (
-                <label key={idx} className="flex items-center gap-2 text-gray-700">
-                  <input
-                    type="radio"
-                    name="connectStatus"
-                    value={status}
-                    className="accent-green-500 cursor-pointer"
-                    onChange={(e) =>
-                      setConnectInfo(prev => ({ ...prev, status: e.target.value }))
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    if (!connectInfo.status) {
+                      alert("Please select a status");
+                      return;
                     }
-                  />
-                  {status}
-                </label>
-              ))}
-              <p className="mt-2 text-sm text-gray-500">
-                Yes: {clickCount[connectInfo.phone]?.yes || 0}
-              </p>
-              <textarea
-                placeholder="Additional notes (optional)..."
-                className="border px-2 py-1 rounded w-full mt-2 text-sm"
-                value={connectInfo.notes}
-                onChange={(e) =>
-                  setConnectInfo(prev => ({ ...prev, notes: e.target.value }))
-                }
-              />
-            </form>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  if (!connectInfo.status) {
-                    alert("Please select a status");
-                    return;
-                  }
-                  const statusMap = {
-                    'Converted to Business': 'Completed',
-                    'Required Follow-Up': 'In Progress',
-                    'Not Interested': 'Declined'
-                  };
-                  updateLeadStatus(connectInfo.leadId, true, {
-                    reason: connectInfo.status,
-                    notes: connectInfo.notes,
-                    status: statusMap[connectInfo.status] || 'In Progress'
-                  });
-                  setShowYesModal(false);
-                  // console.log('connect Info', connectInfo)
-                  localStorage.setItem('connectInfo', JSON.stringify(connectInfo))
-                }}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
-              >
-                Submit
-              </button>
+                    const statusMap = {
+                      'Converted to Business': 'Completed',
+                      'Required Follow-Up': 'In Progress',
+                      'Not Interested': 'Declined'
+                    };
+                    updateLeadStatus(connectInfo.leadId, true, {
+                      reason: connectInfo.status,
+                      notes: connectInfo.notes,
+                      status: statusMap[connectInfo.status] || 'In Progress'
+                    });
+                    setShowYesModal(false);
+                    // console.log('connect Info', connectInfo)
+                    localStorage.setItem('connectInfo', JSON.stringify(connectInfo))
+                  }}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 cursor-pointer"
+                >
+                  Submit
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )
-      }
-      {/* {password && (
+        )
+        }
+        {/* {password && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white w-full max-w-md p-6 rounded-xl shadow-lg relative">
             <h2 className="text-xl font-semibold mb-4">Change Password</h2>
@@ -1038,11 +1035,57 @@ function PersonalDashboard() {
             </form>
           </div>
         </div>
-      )} */}
-      {/* <div className='absolute inset-0 z-40 bg-white'>
+         )} */}
+        {/* <div className='absolute inset-0 z-40 bg-white'>
 
-<CalendarApp/>
-</div> */}
+          <CalendarApp/>
+           </div> */}
+        {/* {true && (
+          <PhotoModal
+          advocates={advocates}
+          loading={advocatesLoading}
+           />
+              ).    } */}
+
+      </div>
+      {advocates.length > 0 && (
+        <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-16'} px-6 pb-6`}>
+          <div className='text-center pb-10 pt-10 font-semibold text-3xl'>OUR CYBER LAWS EXPERTISE PANEL </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {advocates.map((advocate) => (
+              <div
+                key={advocate.enrollmentNumber}
+                className="border rounded-lg p-4 shadow-sm bg-white flex gap-4 items-start"
+              >
+                <div className="flex-shrink-0 w-[100px] h-[130px]">
+                  <img
+                    src={advocate.image_url}
+                    alt={advocate.name}
+                    className="w-full h-full object-fit rounded-md"
+                  />
+                </div>
+                <div className='flex-1'>
+                  <h3 className="font-semibold text-lg">{advocate.name}</h3>
+
+                  <p className="text-sm">
+                    <span className="font-medium">Enrollment No:</span> {advocate.enrollment_number}
+                  </p>
+
+                  <p className="text-sm mt-2">
+                    <span className="font-medium">Specialization:</span>{" "}
+                    {advocate.specialization}
+                  </p>
+
+                  <p className="text-sm">
+                    <span className="font-medium">Area of Practice:</span>{" "}
+                    {advocate.area_of_practice}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -102,8 +102,8 @@ export default function LayoutVisibilityWrapper({ children }: { children: React.
             })
           }}>
             <div className="flex justify-center">
-              <a href="https://wa.me/916309557176?text=Hi%20JP%20Law%20Suvidha%20%21%21"
-                target="_blank"
+              <a href="https://wa.me/918019097373?text=Hi%20JP%20Law%20Suvidha%20%21%21"
+                target="_self"
                 rel="noopener noreferrer"
                 className="w-16 h-10 rounded-full bg-blue-200 flex items-center justify-center hover:bg-blue-400 transition-colors animate-whatsapp ">
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { privateApi } from './privateapi';
-// const API_BASE_URL = 'http://localhost:3001/api';
-const API_BASE_URL = 'https://backend.com.jplawsuvidha.com/api';
+// const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = 'https://backend.jplawsuvidha.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -125,6 +125,14 @@ export const leadService = {
       throw err;
     }
   },
+  getAdvocates: async (signal?: AbortSignal) => {
+    try {
+      const res = await privateApi.get('/get-advocates', { signal });
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
+  },
   updateLead: async (id: number | string, data: any) => {
     try {
       const res = await privateApi.put(`/leads/${id}`, data);
@@ -144,6 +152,41 @@ export const leadService = {
   getActivities: async (leadId: number | string, signal?: AbortSignal) => {
     try {
       const res = await privateApi.get(`/leads/${leadId}/activity`, { signal });
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
+  },
+  getNextHearingDate: async (leadId: number | string, signal?: AbortSignal) => {
+    try {
+      const res = await privateApi.get(`/leads/${leadId}/next-hearing`, { signal });
+      console.log('next hearing data', res.data)
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
+  },
+  addHearingActivity: async (leadId: number | string, data: any) => {
+    // Placeholder for backend API
+    try {
+      const res = await privateApi.post(`/leads/${leadId}/hearing-activity`, data);
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
+  },
+  updateHearingActivity: async (activityId: number | string, data: any) => {
+    // Placeholder for backend API
+    try {
+      const res = await privateApi.put(`/hearing-activity/${activityId}`, data);
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
+  },
+  getClients: async (signal?: AbortSignal) => {
+    try {
+      const res = await privateApi.get('/converted-clients', { signal });
       return res.data;
     } catch (err) {
       throw err;

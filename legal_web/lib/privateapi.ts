@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://backend.com.jplawsuvidha.com/api";
-// const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = "https://backend.jplawsuvidha.com/api";
+// const API_BASE_URL = 'http://localhost:3002/api';
 
 
 let accessToken: string | null = null;
@@ -46,11 +46,11 @@ privateApi.interceptors.response.use(
 
                     refreshPromise = axios
                         .get(
-                            `${process.env.NEXT_PUBLIC_PROD_API_URL || "http://localhost:3001/api"}/validate`,
+                            `${API_BASE_URL}/validate`,
                             { withCredentials: true }
                         )
                         .then((res) => {
-                            const newToken = res.data.token;
+                            const newToken = res.data.token || res.data.accessToken;
                             setAccessToken(newToken);
                             return newToken;
                         })

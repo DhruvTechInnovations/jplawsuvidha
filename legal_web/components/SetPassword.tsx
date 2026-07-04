@@ -9,7 +9,7 @@ import { Lock, CheckCircle, ArrowLeft, Eye, EyeOff, Check, X, Info } from 'lucid
 import Link from 'next/link';
 import axios from 'axios';
 
-const API_BASE_URL = 'https://backend.com.jplawsuvidha.com/api';
+const API_BASE_URL = 'https://backend.jplawsuvidha.com/api';
 // const API_BASE_URL = 'http://localhost:3001/api';
 
 
